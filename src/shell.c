@@ -25,9 +25,6 @@
  *       timer_get_slice()  en timer.h
  */
 
-#define _GNU_SOURCE
-#define _POSIX_C_SOURCE 200809L
-
 #include "shell.h"
 #include "scheduler.h"
 #include "timer.h"

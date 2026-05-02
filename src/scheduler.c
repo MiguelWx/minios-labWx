@@ -31,8 +31,6 @@
  *     críticas, por lo que no necesitas mutex manual sobre process_table.
  */
 
-#define _GNU_SOURCE
-#define _POSIX_C_SOURCE 200809L
 
 #include "scheduler.h"
 #include "timer.h"
@@ -225,8 +223,6 @@ void scheduler_tick(int signum) {
     current->context_switches++;
 
     rq_enqueue(current_running);
-
-    int next = rq_dequeue();
 
     int next = rq_dequeue();
     pcb_t *n = &process_table[next];
