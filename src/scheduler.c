@@ -263,8 +263,10 @@ void scheduler_sigchld(int signum) {
                 struct timespec now;
                 clock_gettime(CLOCK_MONOTONIC, &now);
 
-                double elapsed = timespec_diff_ms(now, process_table[i].last_started);
-                process_table[i].cpu_time_ms += elapsed;
+                if (i == current_running) {
+                    double elapsed = timespec_diff_ms(now, process_table[i].last_started);
+                    process_table[i].cpu_time_ms += elapsed;
+                }
 
                 process_table[i].state = PROC_TERMINATED;
 
