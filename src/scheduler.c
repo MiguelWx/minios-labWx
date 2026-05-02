@@ -226,11 +226,7 @@ void scheduler_tick(int signum) {
 
     rq_enqueue(current_running);
 
-    if (rq_is_empty()) {
-        current_running = -1;
-        timer_stop();
-        return;
-    }
+    int next = rq_dequeue();
 
     int next = rq_dequeue();
     pcb_t *n = &process_table[next];
