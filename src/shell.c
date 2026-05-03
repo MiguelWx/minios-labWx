@@ -279,19 +279,14 @@ static void cmd_kill_proc(const char *arg) {
 
     int found = 0;
     for (int i = 0; i < process_count; i++) {
-
         if (process_table[i].pid == target_pid &&
             process_table[i].state != PROC_TERMINATED) {
 
-            int status;
-            kill(target_pid, SIGKILL);
-            waitpid(target_pid, &status, 0);
-
-            process_table[i].state = PROC_TERMINATED;
-
-            rq_remove(i);
-
-            printf("Proceso PID %d terminado.\n", target_pid);
+            if (kill(target_pid, SIGKILL) < 0) {
+                perror("kill");
+            } else {
+                printf("Proceso PID %d terminado.\n", target_pid);
+            }
 
             found = 1;
             break;

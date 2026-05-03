@@ -31,7 +31,6 @@
  *     críticas, por lo que no necesitas mutex manual sobre process_table.
  */
 
-
 #include "scheduler.h"
 #include "timer.h"
 #include "monitor.h"
@@ -99,7 +98,7 @@ void scheduler_stop(void) {
 }
 
 // ============================================================
-// CREATE PROCESS
+// [TODO 1/4] scheduler_create_process
 // ============================================================
 
 int scheduler_create_process(const char *path, const char *arg) {
@@ -146,7 +145,6 @@ int scheduler_create_process(const char *path, const char *arg) {
     char *name = basename(copy);
 
     pcb_init(&process_table[idx], pid, name);
-
     free(copy);
 
     if (platform_uses_ptrace()) {
@@ -175,7 +173,7 @@ int scheduler_create_process(const char *path, const char *arg) {
 }
 
 // ============================================================
-// START
+// [TODO 2/4] scheduler_start
 // ============================================================
 
 void scheduler_start(int slice_ms) {
@@ -201,7 +199,7 @@ void scheduler_start(int slice_ms) {
 }
 
 // ============================================================
-// TICK (ROUND ROBIN)
+// [TODO 3/4] scheduler_tick
 // ============================================================
 
 void scheduler_tick(int signum) {
@@ -224,21 +222,27 @@ void scheduler_tick(int signum) {
 
     rq_enqueue(current_running);
 
-    int next = rq_dequeue();
-    pcb_t *n = &process_table[next];
+    if (rq_is_empty()) {
+        current_running = -1;
+        timer_stop();
+        return;
+    }
 
-    n->state = PROC_RUNNING;
-    clock_gettime(CLOCK_MONOTONIC, &n->last_started);
+    int next_idx = rq_dequeue();
+    pcb_t *next = &process_table[next_idx];
 
-    platform_resume_process(n->pid);
+    next->state = PROC_RUNNING;
+    clock_gettime(CLOCK_MONOTONIC, &next->last_started);
 
-    monitor_emit_switch(current->pid, n->pid, timer_get_slice());
+    platform_resume_process(next->pid);
 
-    current_running = next;
+    monitor_emit_switch(current->pid, next->pid, timer_get_slice());
+
+    current_running = next_idx;
 }
 
 // ============================================================
-// SIGCHLD
+// [TODO 4/4] scheduler_sigchld
 // ============================================================
 
 void scheduler_sigchld(int signum) {
@@ -259,6 +263,7 @@ void scheduler_sigchld(int signum) {
                 struct timespec now;
                 clock_gettime(CLOCK_MONOTONIC, &now);
 
+             
                 if (i == current_running) {
                     double elapsed = timespec_diff_ms(now, process_table[i].last_started);
                     process_table[i].cpu_time_ms += elapsed;
@@ -270,6 +275,7 @@ void scheduler_sigchld(int signum) {
                     process_table[i].cpu_time_ms,
                     process_table[i].context_switches);
 
+                // 🔥 CASO 1: era el proceso en ejecución
                 if (i == current_running) {
 
                     current_running = -1;
@@ -288,7 +294,10 @@ void scheduler_sigchld(int signum) {
                         timer_stop();
                         scheduler_active = 0;
                     }
-                } else {
+
+                }
+           
+                else {
                     rq_remove(i);
                 }
 
